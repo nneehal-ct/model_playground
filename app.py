@@ -32,8 +32,8 @@ PROMPT_REFS = {
 
 MODELS = {
     "OpenAI-GPT-4o": "openai:gpt-4o",
-    "GROQ-Deepseek-Distil-Llama-3.3-70B": "groq:deepseek-r1-distill-llama-70b",
     "HF-Qwen2.5-72B-Instruct": "huggingface:Qwen/Qwen2.5-72B-Instruct",
+    "HF-Llama-3.3-70B-Instruct": "huggingface:meta-llama/Llama-3.3-70B-Instruct",
     "Together-Mistral-Small-24B-Instruct": "mistralai/Mistral-Small-24B-Instruct-2501",
 }
 
@@ -84,7 +84,8 @@ def ask(message, sys_message="You are a helpful agent.", model="groq:llama-3.2-3
     ]
     
     token_count = num_tokens_from_messages(messages)
-    st.sidebar.write(f"Input tokens: {token_count}")
+    st.success(f"Input Token count: {token_count}")
+    #st.sidebar.write(f"Input tokens: {token_count}")
     
     with st.expander("View Full Prompt"):
         st.text_area("Complete prompt sent to model:", 
@@ -181,36 +182,36 @@ def ask(message, sys_message="You are a helpful agent.", model="groq:llama-3.2-3
 def load_prompt(url):
     return weave.ref(url).get()
 
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide", page_title="Caspia Model Playground", page_icon="🚀")
+
+#change app logo title as well
+st.image("https://caspiatechnologies.com/wp-content/uploads/2024/05/cropped-Logo-Mark-Dark.png", width=200)
+st.title("Caspia Model Playground")
 
 with st.sidebar:
     st.title("Chat Settings")
-    selected_model = st.selectbox("Choose AI Model", options=list(MODELS.keys()))
-    selected_prompt_name = st.selectbox("Select Preset Prompt", options=list(PROMPT_REFS.keys()))
+    selected_model = st.selectbox("1.Choose AI Model", options=list(MODELS.keys()))
+    selected_prompt_name = st.selectbox("2.Select Preset Prompt", options=list(PROMPT_REFS.keys()))
     
-    if selected_prompt_name and st.button("Finalize This Prompt"):
+    if selected_prompt_name and st.button("3.Finalize This Prompt"):
         prompt_text = load_prompt(PROMPT_REFS[selected_prompt_name])
         st.success(f"Prompt loaded: {selected_prompt_name}")
         #st.session_state.current_prompt = prompt_text.content
 
-    st.subheader("Upload Context Files")
+    st.subheader("5.Upload Context Files")
     uploaded_files = st.file_uploader(
         "Upload files (.v, .sv, .txt, .json)", 
         type=['v', 'sv', 'txt', 'json'], 
         accept_multiple_files=True
     )
     
-    if uploaded_files and st.button("Process Files"):
+    if uploaded_files and st.button("6.Process Files"):
         file_contents = []
         for file in uploaded_files:
             content = process_file_content(file)
             file_contents.append(content)
         st.session_state.file_context = "\n".join(file_contents)
         st.success(f"Processed {len(uploaded_files)} files")
-        
-        # Show preview of processed files
-        with st.expander("Preview processed files"):
-            st.code(st.session_state.file_context)
 
 # Main content area
 st.subheader("Input")
@@ -231,7 +232,7 @@ user_input = st.text_area(
     key="user_input"
 )
 
-if selected_prompt_name and st.button("Format Selected Prompt", key="load_prompt_button"):
+if selected_prompt_name and st.button("4.Load Selected Prompt", key="load_prompt_button"):
     prompt_text = load_prompt(PROMPT_REFS[selected_prompt_name])
     if "<purpose>" in prompt_text.content and "<prompt>" in prompt_text.content:
         purpose = prompt_text.content.split("<purpose>")[1].split("</purpose>")[0]
@@ -241,7 +242,7 @@ if selected_prompt_name and st.button("Format Selected Prompt", key="load_prompt
         st.session_state.current_prompt = prompt
         st.rerun()
 
-if st.button("Send", key="send_button"):
+if st.button(f"7.Ask LLM", key="send_button"):
     if user_input:
         # The ask function now handles all formatting and display
         response = ask(message=user_input, sys_message=system_input, model=MODELS[selected_model])
