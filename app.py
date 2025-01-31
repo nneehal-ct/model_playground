@@ -26,8 +26,8 @@ if 'system_message' not in st.session_state:
 weave.init("SVx")
 
 PROMPT_REFS = {
-    "Step 1": "weave:///caspia-technologies/SVx/object/step_1:dCLtZ2iDazxnHhbYQhey9gfc7UAzs6UpUPcpVLsVldM",
-    "Step 2": "<test>"
+    "Step 1: FSM Overview": "weave:///caspia-technologies/SVx/object/step_1:dCLtZ2iDazxnHhbYQhey9gfc7UAzs6UpUPcpVLsVldM",
+    "Step 2:": "<test>"
 }
 
 MODELS = {
@@ -83,9 +83,8 @@ def ask(message, sys_message="You are a helpful agent.", model="groq:llama-3.2-3
         {"role": "user", "content": context}
     ]
     
-    if "gpt" in model.lower():
-        token_count = num_tokens_from_messages(messages)
-        st.sidebar.write(f"Input tokens: {token_count}")
+    token_count = num_tokens_from_messages(messages)
+    st.sidebar.write(f"Input tokens: {token_count}")
     
     with st.expander("View Full Prompt"):
         st.text_area("Complete prompt sent to model:", 
@@ -189,9 +188,10 @@ with st.sidebar:
     selected_model = st.selectbox("Choose AI Model", options=list(MODELS.keys()))
     selected_prompt_name = st.selectbox("Select Preset Prompt", options=list(PROMPT_REFS.keys()))
     
-    if selected_prompt_name and st.button("Load Prompt"):
+    if selected_prompt_name and st.button("Finalize This Prompt"):
         prompt_text = load_prompt(PROMPT_REFS[selected_prompt_name])
-        st.session_state.current_prompt = prompt_text.content
+        st.success(f"Prompt loaded: {selected_prompt_name}")
+        #st.session_state.current_prompt = prompt_text.content
 
     st.subheader("Upload Context Files")
     uploaded_files = st.file_uploader(
@@ -231,7 +231,7 @@ user_input = st.text_area(
     key="user_input"
 )
 
-if selected_prompt_name and st.button("Load Prompt", key="load_prompt_button"):
+if selected_prompt_name and st.button("Format Selected Prompt", key="load_prompt_button"):
     prompt_text = load_prompt(PROMPT_REFS[selected_prompt_name])
     if "<purpose>" in prompt_text.content and "<prompt>" in prompt_text.content:
         purpose = prompt_text.content.split("<purpose>")[1].split("</purpose>")[0]
