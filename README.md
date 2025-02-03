@@ -1,4 +1,4 @@
-# model_playground
+# Caspia Model Playground
 
 - To use this app, first clone this repository with _git clone_.
 
