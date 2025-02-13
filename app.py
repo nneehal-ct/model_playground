@@ -4,17 +4,14 @@ import wandb, weave
 import json
 import os
 import tiktoken
-from together import Together 
-
+import PyPDF2
+import io
 from dotenv import load_dotenv
 load_dotenv()
 
-os.environ["WANDB_API_KEY"] = os.getenv("WANDB_API_KEY")
-os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
-os.environ["GROQ_API_KEY"] = os.getenv("GROQ_API_KEY")
-os.environ["HF_TOKEN"] = os.getenv("HF_API_KEY")
-os.environ['TOGETHER_API_KEY'] = os.getenv('TOGETHER_API_KEY')
-os.environ['ANTHROPIC_API_KEY'] = os.getenv('ANTHROPIC_API_KEY')
+os.environ["WANDB_API_KEY"] = os.getenv("WANDB_CASPIA_API_KEY")
+os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_CASPIA_API_KEY")
+os.environ["ANTHROPIC_API_KEY"] = os.getenv("ANTHROPIC_CASPIA_API_KEY")
 
 if 'messages' not in st.session_state:
     st.session_state.messages = []
@@ -32,24 +29,37 @@ PROMPT_REFS = {
 }
 
 MODELS = {
-    "HF-Qwen2.5-72B-Instruct": "huggingface:Qwen/Qwen2.5-72B-Instruct",
-    "HF-Llama-3.3-70B-Instruct": "huggingface:meta-llama/Llama-3.3-70B-Instruct",
-    "Together-Mistral-Small-24B-Instruct": "mistralai/Mistral-Small-24B-Instruct-2501",
+    "Mistral-Small-24B-Instruct": "together:mistralai/Mistral-Small-24B-Instruct-2501",
     "OpenAI-GPT-4o": "openai:gpt-4o",
-    "Anthropic-Claude-3.5-Sonnet": "anthropic:claude-3-5-sonnet-20240620"
+    "Anthropic-Claude-3.5-Sonnet": "anthropic:claude-3-5-sonnet-20240620",
+    "Llama-3.3-70B-Instruct": "together:meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+    "Llama-3.1-8B-Instruct": "together:meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
 }
 
 def process_file_content(file):
     """Process different file types and return formatted content"""
-    content = file.read().decode()
     file_extension = file.name.split('.')[-1].lower()
     
     try:
+        if file_extension == 'pdf':
+            # Handle PDF files
+            pdf_content = []
+            pdf_reader = PyPDF2.PdfReader(io.BytesIO(file.read()))
+            
+            for page_num in range(len(pdf_reader.pages)):
+                page = pdf_reader.pages[page_num]
+                pdf_content.append(page.extract_text())
+            
+            return f"File: {file.name} (PDF)\n{''.join(pdf_content)}\n"
+        
+        # For non-PDF files, read content as before
+        content = file.read().decode()
+        
         if file_extension == 'json':
             json_content = json.loads(content)
             return f"File: {file.name} (JSON)\n{json.dumps(json_content, indent=2)}\n"
-        elif file_extension in ['v', 'sv']:
-            return f"File: {file.name} (Verilog/SystemVerilog)\n{content}\n"
+        elif file_extension in ['v', 'sv', 'doc']:
+            return f"File: {file.name} ({file_extension.upper()})\n{content}\n"
         else:
             return f"File: {file.name} (Text)\n{content}\n"
     except json.JSONDecodeError:
@@ -88,7 +98,8 @@ def format_response(message, model, content, step=None, purpose=None):
         </div>
         """
 
-def ask(message, sys_message="You are a helpful agent.", model="groq:llama-3.2-3b-preview"):
+@weave.op()
+def ask(message, sys_message="You are a helpful agent.", model="openai:gpt-4"):
     try:
         client = ai.Client()
         
@@ -113,25 +124,13 @@ def ask(message, sys_message="You are a helpful agent.", model="groq:llama-3.2-3
         step = message.split("<step>")[1].split("</step>")[0] if "<step>" in message else None
         purpose = message.split("<purpose>")[1].split("</purpose>")[0] if "<purpose>" in message else None
         
-        # Handle different model types
-        if model.startswith("mistralai/"):
-            # Special handling for Together AI models
-            client = Together()
-            response = client.chat.completions.create(
-                model=model,
-                messages=messages,
-                stream=False
-            )
-        else:
-            # Default handling for all other models (including Anthropic)
-            response = client.chat.completions.create(
-                model=model,
-                messages=messages,
-                stream=False
-            )
+        response = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            stream=False
+        )
 
-        # Handle response uniformly for all models
-        response_text = response.choices[0].message.content if hasattr(response.choices[0], 'message') else response.choices[0].text
+        response_text = response.choices[0].message.content
         formatted_response = format_response(message, model, response_text, step, purpose)
         response_placeholder.markdown(formatted_response, unsafe_allow_html=True)
         return response_text
@@ -139,7 +138,6 @@ def ask(message, sys_message="You are a helpful agent.", model="groq:llama-3.2-3
     except Exception as e:
         st.error(f"Error during API call: {str(e)}")
         return None
-
 
 def load_prompt(url):
     if url is None:
@@ -162,8 +160,8 @@ with st.sidebar:
 
     st.subheader("Upload Context Files")
     uploaded_files = st.file_uploader(
-        "Upload files (.v, .sv, .txt, .json)", 
-        type=['v', 'sv', 'txt', 'json'], 
+        "Upload files (.v, .sv, .txt, .json, .doc, .pdf)", 
+        type=['v', 'sv', 'txt', 'json', 'doc', 'pdf'], 
         accept_multiple_files=True
     )
     

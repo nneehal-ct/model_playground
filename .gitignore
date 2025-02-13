@@ -1,6 +1,7 @@
 #folders 
 deprecated
 playground 
+tiny_aes
 
 #secrets 
 .env
