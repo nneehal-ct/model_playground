@@ -104,13 +104,13 @@ def ask(message, sys_message="You are a helpful agent.", model="openai:gpt-4", m
 
         client.configure({
             "together": {
-                "timeout": 300
+                "timeout": 600
             },
             "openai": {
-                "timeout": 300
+                "timeout": 600
             },
             "anthropic": {
-                "timeout": 300
+                "timeout": 600
             }
         })
         
