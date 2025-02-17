@@ -2,6 +2,7 @@
 deprecated
 playground 
 tiny_aes
-
+.ipynb_checkpoints
+model_playground
 #secrets 
 .env
