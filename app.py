@@ -42,7 +42,6 @@ def process_file_content(file):
     
     try:
         if file_extension == 'pdf':
-            # Handle PDF files
             pdf_content = []
             pdf_reader = PyPDF2.PdfReader(io.BytesIO(file.read()))
             
@@ -52,7 +51,6 @@ def process_file_content(file):
             
             return f"File: {file.name} (PDF)\n{''.join(pdf_content)}\n"
         
-        # For non-PDF files, read content as before
         content = file.read().decode()
         
         if file_extension == 'json':
@@ -99,9 +97,21 @@ def format_response(message, model, content, step=None, purpose=None):
         """
 
 @weave.op()
-def ask(message, sys_message="You are a helpful agent.", model="openai:gpt-4"):
+def ask(message, sys_message="You are a helpful agent.", model="openai:gpt-4", max_tokens=None, temperature=None):
     try:
         client = ai.Client()
+
+        client.configure({
+            "together": {
+                "timeout": 300
+            },
+            "openai": {
+                "timeout": 300
+            },
+            "anthropic": {
+                "timeout": 300
+            }
+        })
         
         context = f"{message}\n\nAdditional Context:\n{st.session_state.file_context}" if st.session_state.file_context else message
         
@@ -124,11 +134,20 @@ def ask(message, sys_message="You are a helpful agent.", model="openai:gpt-4"):
         step = message.split("<step>")[1].split("</step>")[0] if "<step>" in message else None
         purpose = message.split("<purpose>")[1].split("</purpose>")[0] if "<purpose>" in message else None
         
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            stream=False
-        )
+        # Prepare completion parameters
+        completion_params = {
+            "model": model,
+            "messages": messages,
+            "stream": False
+        }
+        
+        # Add optional parameters if they're set
+        if max_tokens is not None:
+            completion_params["max_tokens"] = max_tokens
+        if temperature is not None:
+            completion_params["temperature"] = temperature
+        
+        response = client.chat.completions.create(**completion_params)
 
         response_text = response.choices[0].message.content
         formatted_response = format_response(message, model, response_text, step, purpose)
@@ -153,6 +172,14 @@ with st.sidebar:
     st.title("Chat Settings")
     selected_model = st.selectbox("Choose AI Model", options=list(MODELS.keys()))
     selected_prompt_name = st.selectbox("Select Preset Prompt", options=list(PROMPT_REFS.keys()))
+    
+    # Add new LLM parameter controls
+    st.subheader("LLM Parameters")
+    use_max_tokens = st.checkbox("Set Max Tokens", value=False)
+    max_tokens = st.number_input("Max Tokens", min_value=1, max_value=32000, value=4096, step=100) if use_max_tokens else None
+    
+    use_temperature = st.checkbox("Set Temperature", value=False)
+    temperature = st.slider("Temperature", min_value=0.0, max_value=2.0, value=1.0, step=0.01) if use_temperature else None
     
     if selected_prompt_name != "No pre-set prompts" and st.button("Finalize This Prompt"):
         prompt_text = load_prompt(PROMPT_REFS[selected_prompt_name])
@@ -201,6 +228,12 @@ if selected_prompt_name != "No pre-set prompts" and st.button("Load Selected Pro
 
 if st.button("Ask LLM", key="send_button"):
     if user_input:
-        response = ask(message=user_input, sys_message=system_input, model=MODELS[selected_model])
+        response = ask(
+            message=user_input, 
+            sys_message=system_input, 
+            model=MODELS[selected_model],
+            max_tokens=max_tokens,
+            temperature=temperature
+        )
 
 st.markdown("---")
