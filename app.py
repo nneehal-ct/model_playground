@@ -12,6 +12,7 @@ load_dotenv()
 os.environ["WANDB_API_KEY"] = os.getenv("WANDB_CASPIA_API_KEY")
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_CASPIA_API_KEY")
 os.environ["ANTHROPIC_API_KEY"] = os.getenv("ANTHROPIC_CASPIA_API_KEY")
+os.environ["TOGETHER_API_KEY"] = os.getenv("TOGETHER_CASPIA_API_KEY")
 
 if 'messages' not in st.session_state:
     st.session_state.messages = []
