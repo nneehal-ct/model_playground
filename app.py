@@ -13,6 +13,7 @@ os.environ["WANDB_API_KEY"] = os.getenv("WANDB_CASPIA_API_KEY")
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_CASPIA_API_KEY")
 os.environ["ANTHROPIC_API_KEY"] = os.getenv("ANTHROPIC_CASPIA_API_KEY")
 os.environ["TOGETHER_API_KEY"] = os.getenv("TOGETHER_CASPIA_API_KEY")
+os.environ["MISTRAL_API_KEY"] = os.getenv("MISTRAL_API_KEY")
 
 if 'messages' not in st.session_state:
     st.session_state.messages = []
@@ -30,7 +31,7 @@ PROMPT_REFS = {
 }
 
 MODELS = {
-    "Mistral-Small-24B-Instruct": "together:mistralai/Mistral-Small-24B-Instruct-2501",
+    "Mistral-Small-24B-Instruct": "mistral:mistral-small-latest",
     "OpenAI-GPT-4o": "openai:gpt-4o",
     "Anthropic-Claude-3.5-Sonnet": "anthropic:claude-3-5-sonnet-20240620",
     "Llama-3.3-70B-Instruct": "together:meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
