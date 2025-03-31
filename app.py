@@ -22,7 +22,7 @@ if 'file_context' not in st.session_state:
 if 'system_message' not in st.session_state:
     st.session_state.system_message = "You are a helpful assistant."
 
-weave.init("SVx")
+#weave.init("SVx")
 
 PROMPT_REFS = {
     "No pre-set prompts": None,
@@ -98,7 +98,7 @@ def format_response(message, model, content, step=None, purpose=None):
         </div>
         """
 
-@weave.op()
+#@weave.op()
 def ask(message, sys_message="You are a helpful agent.", model="openai:gpt-4", max_tokens=None, temperature=None):
     try:
         client = ai.Client()
@@ -160,10 +160,10 @@ def ask(message, sys_message="You are a helpful agent.", model="openai:gpt-4", m
         st.error(f"Error during API call: {str(e)}")
         return None
 
-def load_prompt(url):
-    if url is None:
-        return None
-    return weave.ref(url).get()
+# def load_prompt(url):
+#     if url is None:
+#         return None
+#     return weave.ref(url).get()
 
 st.set_page_config(layout="wide", page_title="Caspia Model Playground", page_icon="🚀")
 
@@ -178,7 +178,7 @@ with st.sidebar:
     # Add new LLM parameter controls
     st.subheader("LLM Parameters")
     use_max_tokens = st.checkbox("Set Max Tokens", value=False)
-    max_tokens = st.number_input("Max Tokens", min_value=1, max_value=32000, value=4096, step=100) if use_max_tokens else None
+    max_tokens = st.number_input("Max Tokens", min_value=1, value=128000, step=100) if use_max_tokens else None
     
     use_temperature = st.checkbox("Set Temperature", value=False)
     temperature = st.slider("Temperature", min_value=0.0, max_value=2.0, value=1.0, step=0.01) if use_temperature else None
